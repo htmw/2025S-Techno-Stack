@@ -1,0 +1,2 @@
+# Techno Stack
+InvestIQ is a wise investment assistant that helps investors understand market trends, track real-time financial news, and make better financial decisions. Unlike essential platforms that only show raw data, InvestIQ uses AI to analyze stock trends and news, providing personalized insights and risk alerts. It helps users stay updated with market sentiment, get tailored investment advice, and make informed trading choices in one easy-to-use platform.
