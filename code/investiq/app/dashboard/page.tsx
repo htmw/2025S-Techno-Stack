@@ -23,6 +23,18 @@ import {
   Bar
 } from 'recharts';
 
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    value: number;
+    payload: {
+      date: string;
+      [key: string]: any;
+    };
+  }>;
+  label?: string;
+}
+
 export default function Dashboard() {
   const [timeRange, setTimeRange] = useState('1M');
   
@@ -74,11 +86,12 @@ export default function Dashboard() {
     }
   ];
 
+
   // Time range options
   const timeRanges = ['1D', '1W', '1M', '3M', '1Y', 'All'];
 
   // Custom tooltip for chart
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: TooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-black p-3 border border-green-500 rounded-lg shadow-lg text-white">
