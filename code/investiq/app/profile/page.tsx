@@ -66,18 +66,18 @@ export default function Profile() {
   return (
     <div className="p-0">
       {/* Page header */}
-      <div className="px-6 py-4 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+      <div className="px-6 py-4 bg-black text-white border-b border-green-500">
         <h1 className="text-xl font-bold">Profile</h1>
       </div>
       
-      <div className="p-6 max-w-5xl mx-auto">
+      <div className="p-6 max-w-5xl mx-auto bg-gray-900">
         {/* Tabs */}
-        <div className="flex border-b border-slate-200 dark:border-slate-700 mb-6">
+        <div className="flex border-b border-green-500 mb-6">
           <button 
             className={`px-4 py-2 text-sm font-medium ${
               activeTab === 'preferences' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'text-green-500 border-b-2 border-green-500' 
+                : 'text-gray-400 hover:text-white'
             }`}
             onClick={() => setActiveTab('preferences')}
           >
@@ -86,8 +86,8 @@ export default function Profile() {
           <button 
             className={`px-4 py-2 text-sm font-medium ${
               activeTab === 'security' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'text-green-500 border-b-2 border-green-500' 
+                : 'text-gray-400 hover:text-white'
             }`}
             onClick={() => setActiveTab('security')}
           >
@@ -96,8 +96,8 @@ export default function Profile() {
           <button 
             className={`px-4 py-2 text-sm font-medium ${
               activeTab === 'notifications' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'text-green-500 border-b-2 border-green-500' 
+                : 'text-gray-400 hover:text-white'
             }`}
             onClick={() => setActiveTab('notifications')}
           >
@@ -106,15 +106,15 @@ export default function Profile() {
         </div>
         
         {activeTab === 'preferences' && (
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+          <div className="bg-black rounded-xl shadow-sm overflow-hidden border border-green-500">
+            <div className="p-6 border-b border-green-500">
               <div className="flex items-center gap-3 mb-2">
-                <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                  <Target className="text-blue-600 dark:text-blue-400" size={20} />
+                <div className="h-10 w-10 rounded-lg bg-gray-800 flex items-center justify-center">
+                  <Target className="text-green-500" size={20} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold">Investment Preferences</h2>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Configure your investment strategy and goals</p>
+                  <h2 className="text-lg font-bold text-white">Investment Preferences</h2>
+                  <p className="text-sm text-gray-400">Configure your investment strategy and goals</p>
                 </div>
               </div>
             </div>
@@ -125,7 +125,7 @@ export default function Profile() {
                 <div className="space-y-6">
                   {/* Investment Goal */}
                   <div className="space-y-4">
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <label className="block text-sm font-medium text-gray-300">
                       Investment Goal
                     </label>
                     <div className="space-y-3">
@@ -134,26 +134,26 @@ export default function Profile() {
                           key={goal.value}
                           className={`flex items-start p-4 border rounded-lg cursor-pointer transition-colors ${
                             formData.investmentGoal === goal.value
-                              ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-                              : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                              ? 'bg-gray-800 border-green-500'
+                              : 'border-gray-700 hover:bg-gray-800'
                           }`}
                           onClick={() => setFormData({ ...formData, investmentGoal: goal.value })}
                         >
                           <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
                             formData.investmentGoal === goal.value
-                              ? 'bg-blue-100 dark:bg-blue-900'
-                              : 'bg-slate-100 dark:bg-slate-800'
+                              ? 'bg-gray-700'
+                              : 'bg-gray-800'
                           }`}>
-                            <goal.icon size={20} className={formData.investmentGoal === goal.value ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'} />
+                            <goal.icon size={20} className={formData.investmentGoal === goal.value ? 'text-green-500' : 'text-gray-400'} />
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium">
+                            <div className="text-sm font-medium text-white">
                               {goal.label}
                               {formData.investmentGoal === goal.value && (
-                                <span className="ml-2 inline-block w-2 h-2 bg-blue-600 rounded-full"></span>
+                                <span className="ml-2 inline-block w-2 h-2 bg-green-500 rounded-full"></span>
                               )}
                             </div>
-                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            <div className="text-xs text-gray-400 mt-1">
                               {goal.description}
                             </div>
                           </div>
@@ -164,18 +164,18 @@ export default function Profile() {
                   
                   {/* Investment Horizon */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Investment Time Horizon
                     </label>
-                    <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                    <div className="flex bg-gray-800 rounded-lg p-1">
                       {timeHorizonOptions.map((option) => (
                         <button
                           key={option.value}
                           type="button"
                           className={`flex-1 py-2 text-xs font-medium rounded-md ${
                             formData.investmentHorizon === option.value
-                              ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                              : 'text-slate-600 dark:text-slate-400'
+                              ? 'bg-black text-green-500 shadow-sm border border-green-500'
+                              : 'text-gray-400'
                           }`}
                           onClick={() => setFormData({ ...formData, investmentHorizon: option.value })}
                         >
@@ -187,11 +187,11 @@ export default function Profile() {
                   
                   {/* Tax Bracket */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Tax Bracket
                     </label>
                     <select
-                      className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-3 border border-gray-700 rounded-lg bg-black text-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
                       value={formData.taxBracket}
                       onChange={(e) => setFormData({ ...formData, taxBracket: e.target.value })}
                     >
@@ -212,12 +212,12 @@ export default function Profile() {
                   {/* Risk Tolerance */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      <label className="block text-sm font-medium text-gray-300">
                         Risk Tolerance
                       </label>
                       <button 
                         type="button"
-                        className="flex items-center text-xs text-blue-600 dark:text-blue-400"
+                        className="flex items-center text-xs text-green-500"
                       >
                         <Info size={14} className="mr-1" />
                         Learn more
@@ -230,18 +230,18 @@ export default function Profile() {
                           key={option.value}
                           className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                             formData.riskTolerance === option.value
-                              ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-                              : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                              ? 'bg-gray-800 border-green-500'
+                              : 'border-gray-700 hover:bg-gray-800'
                           }`}
                           onClick={() => setFormData({ ...formData, riskTolerance: option.value })}
                         >
                           <div className="flex items-center justify-between mb-2">
-                            <h3 className="font-medium">{option.label}</h3>
+                            <h3 className="font-medium text-white">{option.label}</h3>
                             {formData.riskTolerance === option.value && (
-                              <span className="inline-block w-2 h-2 bg-blue-600 rounded-full"></span>
+                              <span className="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
                             )}
                           </div>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                          <p className="text-xs text-gray-400">
                             {option.description}
                           </p>
                         </div>
@@ -251,16 +251,16 @@ export default function Profile() {
                   
                   {/* Budget */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Initial Investment Budget
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <DollarSign size={16} className="text-slate-400" />
+                        <DollarSign size={16} className="text-gray-400" />
                       </div>
                       <input
                         type="number"
-                        className="w-full pl-10 p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full pl-10 p-3 border border-gray-700 rounded-lg bg-black text-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
                         placeholder="Enter your total investment budget"
                         value={formData.budget}
                         onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
@@ -270,22 +270,22 @@ export default function Profile() {
                   
                   {/* Monthly Contribution */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Monthly Contribution
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <Calendar size={16} className="text-slate-400" />
+                        <Calendar size={16} className="text-gray-400" />
                       </div>
                       <input
                         type="number"
-                        className="w-full pl-10 p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full pl-10 p-3 border border-gray-700 rounded-lg bg-black text-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
                         placeholder="Recurring monthly investment"
                         value={formData.monthlyContribution}
                         onChange={(e) => setFormData({ ...formData, monthlyContribution: e.target.value })}
                       />
                     </div>
-                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    <p className="mt-2 text-xs text-gray-400">
                       Regular contributions can significantly improve your long-term returns
                     </p>
                   </div>
@@ -293,16 +293,16 @@ export default function Profile() {
               </div>
               
               {/* Action row */}
-              <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+              <div className="mt-8 pt-6 border-t border-green-500">
                 {error && (
-                  <div className="p-4 mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg flex items-start">
+                  <div className="p-4 mb-6 bg-red-900/20 border border-red-800 text-red-400 rounded-lg flex items-start">
                     <span className="mr-2">⚠️</span>
                     <span>{error}</span>
                   </div>
                 )}
                 
                 {success && (
-                  <div className="p-4 mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 rounded-lg flex items-start">
+                  <div className="p-4 mb-6 bg-green-900/20 border border-green-800 text-green-400 rounded-lg flex items-start">
                     <span className="mr-2">✓</span>
                     <span>Your investment preferences have been saved successfully!</span>
                   </div>
@@ -311,13 +311,13 @@ export default function Profile() {
                 <div className="flex items-center justify-end gap-3">
                   <button
                     type="button"
-                    className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                    className="px-4 py-2 border border-gray-700 rounded-lg text-gray-300 hover:bg-gray-800"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center"
+                    className="px-4 py-2 bg-green-500 text-black rounded-lg hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center font-medium"
                   >
                     Save Preferences
                     <ArrowRight size={16} className="ml-2" />
@@ -329,36 +329,36 @@ export default function Profile() {
         )}
         
         {activeTab === 'security' && (
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
+          <div className="bg-black rounded-xl shadow-sm p-6 border border-green-500">
             <div className="flex items-center gap-3 mb-6">
-              <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
-                <Shield className="text-slate-600 dark:text-slate-400" size={20} />
+              <div className="h-10 w-10 rounded-lg bg-gray-800 flex items-center justify-center">
+                <Shield className="text-green-500" size={20} />
               </div>
               <div>
-                <h2 className="text-lg font-bold">Security Settings</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Manage your account security preferences</p>
+                <h2 className="text-lg font-bold text-white">Security Settings</h2>
+                <p className="text-sm text-gray-400">Manage your account security preferences</p>
               </div>
             </div>
             
-            <div className="p-10 text-center text-slate-500 dark:text-slate-400">
+            <div className="p-10 text-center text-gray-400">
               Security settings will be available in the next update
             </div>
           </div>
         )}
         
         {activeTab === 'notifications' && (
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
+          <div className="bg-black rounded-xl shadow-sm p-6 border border-green-500">
             <div className="flex items-center gap-3 mb-6">
-              <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
-                <Bell className="text-slate-600 dark:text-slate-400" size={20} />
+              <div className="h-10 w-10 rounded-lg bg-gray-800 flex items-center justify-center">
+                <Bell className="text-green-500" size={20} />
               </div>
               <div>
-                <h2 className="text-lg font-bold">Notification Preferences</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Manage how you receive alerts and updates</p>
+                <h2 className="text-lg font-bold text-white">Notification Preferences</h2>
+                <p className="text-sm text-gray-400">Manage how you receive alerts and updates</p>
               </div>
             </div>
             
-            <div className="p-10 text-center text-slate-500 dark:text-slate-400">
+            <div className="p-10 text-center text-gray-400">
               Notification settings will be available in the next update
             </div>
           </div>

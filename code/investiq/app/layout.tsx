@@ -6,11 +6,13 @@ import "./globals.css";
 import { 
   Bell,
   Search,
-  Menu
+  Menu,
+  DollarSign
 } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import Sidebar from "./components/Sidebar";
+import DepositModal from "./components/DepositModal";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -23,6 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [depositModalOpen, setDepositModalOpen] = useState(false);
   
   return (
     <html lang="en">
@@ -64,7 +67,11 @@ export default function RootLayout({
                   <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-green-500"></span>
                 </button>
                 
-                <button className="ml-2 hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-black bg-green-500 rounded-lg hover:bg-green-600 transition-colors">
+                <button 
+                  onClick={() => setDepositModalOpen(true)}
+                  className="ml-2 hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-black bg-green-500 rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  <DollarSign size={16} />
                   <span>Deposit</span>
                 </button>
               </div>
@@ -76,6 +83,12 @@ export default function RootLayout({
             </main>
           </div>
         </div>
+
+        {/* Deposit Modal */}
+        <DepositModal 
+          isOpen={depositModalOpen} 
+          onClose={() => setDepositModalOpen(false)} 
+        />
       </body>
     </html>
   );

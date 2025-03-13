@@ -82,15 +82,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         
         {/* User section */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-green-500">
-          <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 cursor-pointer">
+          <Link href="/profile" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 cursor-pointer">
             <div className="h-9 w-9 rounded-full bg-gray-700 flex items-center justify-center">
               <User size={18} className="text-green-500" />
             </div>
             <div>
-              <p className="text-sm font-medium text-white">Alex Morgan</p>
+              <p className="text-sm font-medium text-white">Ruchitha</p>
               <p className="text-xs text-gray-400">View Profile</p>
             </div>
-          </div>
+          </Link>
         </div>
       </aside>
     </>
