@@ -10,10 +10,8 @@ import {
   Plus,
   Filter,
   LineChart as LineChartIcon,
-  ChevronDown,
   TrendingUp,
   Calendar,
-  DollarSign,
   MoreHorizontal
 } from "lucide-react";
 import {
@@ -34,7 +32,6 @@ export default function Portfolio() {
   const [timeRange, setTimeRange] = useState('3M');
   const [viewMode, setViewMode] = useState('holdings');
   
-  // Portfolio performance data
   const performanceData = [
     { date: 'Jan', value: 10000 },
     { date: 'Feb', value: 10800 },
