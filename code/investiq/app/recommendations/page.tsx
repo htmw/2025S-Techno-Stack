@@ -1,17 +1,14 @@
-// app/recommendations/page.tsx
 'use client';
 
 import React, { useState } from 'react';
 import { 
   Target, 
-  TrendingUp, 
   ChevronUp,
   ChevronDown,
   BarChart3,
   ArrowRight,
   Filter,
   Info,
-  Tag
 } from "lucide-react";
 import {
   LineChart,
