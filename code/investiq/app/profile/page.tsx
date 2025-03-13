@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Target, ArrowRight, Shield, Percent, DollarSign, Info, Calendar, TrendingUp, Bell } from "lucide-react";
+import { Target, ArrowRight, Shield, Percent, DollarSign, Info, Calendar, Bell } from "lucide-react";
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState('preferences');

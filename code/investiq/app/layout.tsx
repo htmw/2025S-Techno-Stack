@@ -1,4 +1,3 @@
-// app/layout.tsx
 'use client';
 
 import { Inter } from "next/font/google";
@@ -10,7 +9,6 @@ import {
   DollarSign
 } from "lucide-react";
 import { useState } from "react";
-import Link from "next/link";
 import Sidebar from "./components/Sidebar";
 import DepositModal from "./components/DepositModal";
 
