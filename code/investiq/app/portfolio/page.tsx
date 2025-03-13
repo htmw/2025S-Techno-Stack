@@ -1,4 +1,3 @@
-// app/portfolio/page.tsx
 'use client';
 
 import React, { useState } from 'react';
@@ -27,6 +26,18 @@ import {
   Cell,
   Legend
 } from 'recharts';
+
+interface TooltipProps {
+    active?: boolean;
+    payload?: Array<{
+      value: number;
+      payload: {
+        date: string;
+        [key: string]: any;
+      };
+    }>;
+    label?: string;
+  }
 
 export default function Portfolio() {
   const [timeRange, setTimeRange] = useState('3M');
@@ -73,7 +84,7 @@ export default function Portfolio() {
   const COLORS = ['#10B981', '#34D399', '#6EE7B7', '#1E40AF', '#3B82F6', '#93C5FD'];
 
   // Custom tooltip for chart
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: TooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-black p-3 border border-green-500 rounded-lg shadow-lg text-white">
