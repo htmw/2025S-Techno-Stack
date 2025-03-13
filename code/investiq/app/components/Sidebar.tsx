@@ -1,4 +1,3 @@
-// components/Sidebar.tsx
 'use client';
 
 import { 
@@ -10,7 +9,7 @@ import {
   X
 } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 
 interface SidebarProps {
   isOpen: boolean;
