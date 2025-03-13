@@ -35,6 +35,18 @@ interface StockRecommendation {
   priceHistory: Array<{date: string, price: number}>;
 }
 
+interface TooltipProps {
+    active?: boolean;
+    payload?: Array<{
+      value: number;
+      payload: {
+        date: string;
+        [key: string]: any;
+      };
+    }>;
+    label?: string;
+  }
+
 export default function Recommendations() {
   const [selectedStock, setSelectedStock] = useState<StockRecommendation | null>(null);
   const [filterSector, setFilterSector] = useState('All');
@@ -211,7 +223,7 @@ export default function Recommendations() {
   const sectors = ['All', ...new Set(stockRecommendations.map(stock => stock.sector))];
   
   // Custom tooltip for price chart
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: TooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-black p-3 border border-green-500 rounded-lg shadow-lg text-white">
