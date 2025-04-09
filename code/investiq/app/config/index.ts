@@ -8,7 +8,7 @@ const config = {
     finnhubApiKey: '',
     
     // Polygon.io API key - https://polygon.io/
-    polygonApiKey: '',
+    polygonApiKey: 'GMjCJdNFapVqQwaJ4TroDadM2xLczWpF',
   };
   
   export default config;
