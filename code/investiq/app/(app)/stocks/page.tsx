@@ -11,13 +11,16 @@ import {
 } from "lucide-react";
 import StockChart from '../../StockChart';
 import { 
-  fetchStockData, 
-  fetchMultipleStocks, 
   searchStocks,
   StockDataPoint,
   StockQuote,
   SearchResult
 } from '../../services/StockService';
+import { 
+  DEFAULT_WATCHLIST,
+  getStockData, 
+  getStockQuotes 
+} from '../../services/DataService';
 
 export default function StocksPage() {
   const [activeSymbol, setActiveSymbol] = useState('AAPL');
@@ -27,21 +30,19 @@ export default function StocksPage() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isWatchlistLoading, setIsWatchlistLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Default watchlist symbols
-  const defaultWatchlist = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'];
-
   // Fetch stock data for active symbol
   useEffect(() => {
-    const getStockData = async () => {
+    const fetchActiveStock = async () => {
       if (!activeSymbol) return;
       
       setIsLoading(true);
       setError(null);
       
       try {
-        const data = await fetchStockData(activeSymbol);
+        const data = await getStockData(activeSymbol);
         setStockData(data);
       } catch (err) {
         console.error('Error fetching stock data:', err);
@@ -51,21 +52,24 @@ export default function StocksPage() {
       }
     };
     
-    getStockData();
+    fetchActiveStock();
   }, [activeSymbol]);
 
   // Fetch watchlist data
   useEffect(() => {
-    const getWatchlistData = async () => {
+    const fetchWatchlist = async () => {
+      setIsWatchlistLoading(true);
       try {
-        const data = await fetchMultipleStocks(defaultWatchlist);
+        const data = await getStockQuotes(DEFAULT_WATCHLIST);
         setWatchlist(data);
       } catch (err) {
         console.error('Error fetching watchlist data:', err);
+      } finally {
+        setIsWatchlistLoading(false);
       }
     };
     
-    getWatchlistData();
+    fetchWatchlist();
   }, []);
 
   // Handle search
@@ -178,8 +182,16 @@ export default function StocksPage() {
             <div className="p-4 flex items-center justify-between border-b border-green-500">
               <h2 className="text-base font-bold text-white">Watchlist</h2>
               <div className="flex gap-2">
-                <button className="p-1 rounded-lg hover:bg-gray-800 text-gray-300">
-                  <RefreshCw size={16} />
+                <button 
+                  className="p-1 rounded-lg hover:bg-gray-800 text-gray-300"
+                  onClick={() => {
+                    setIsWatchlistLoading(true);
+                    getStockQuotes(DEFAULT_WATCHLIST)
+                      .then(data => setWatchlist(data))
+                      .finally(() => setIsWatchlistLoading(false));
+                  }}
+                >
+                  <RefreshCw size={16} className={isWatchlistLoading ? "animate-spin" : ""} />
                 </button>
                 <button className="p-1 rounded-lg hover:bg-gray-800 text-gray-300">
                   <Filter size={16} />
@@ -187,7 +199,14 @@ export default function StocksPage() {
               </div>
             </div>
             
-            {watchlist.length > 0 ? (
+            {isWatchlistLoading ? (
+              <div className="p-6 text-center">
+                <div className="flex justify-center mb-3">
+                  <RefreshCw size={24} className="text-gray-400 animate-spin" />
+                </div>
+                <p className="text-gray-400">Loading watchlist...</p>
+              </div>
+            ) : watchlist.length > 0 ? (
               <div className="overflow-y-auto max-h-[400px]">
                 <table className="w-full">
                   <thead>
@@ -229,9 +248,9 @@ export default function StocksPage() {
             ) : (
               <div className="p-6 text-center">
                 <div className="flex justify-center mb-3">
-                  <RefreshCw size={24} className="text-gray-400 animate-spin" />
+                  <AlertCircle size={24} className="text-yellow-500" />
                 </div>
-                <p className="text-gray-400">Loading watchlist...</p>
+                <p className="text-gray-400">No watchlist data available</p>
               </div>
             )}
             
