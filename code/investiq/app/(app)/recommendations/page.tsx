@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Target, 
   ChevronUp,
@@ -9,6 +9,7 @@ import {
   ArrowRight,
   Filter,
   Info,
+  RefreshCw
 } from "lucide-react";
 import {
   LineChart,
@@ -19,6 +20,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
+import { fetchStockData, fetchMultipleStocks } from '../../services/StockService';
 
 // Type for stock recommendation
 interface StockRecommendation {
@@ -33,6 +35,8 @@ interface StockRecommendation {
   sector: string;
   reasons: string[];
   priceHistory: Array<{date: string, price: number}>;
+  isLoading?: boolean;
+  error?: string;
 }
 
 interface TooltipProps {
@@ -45,22 +49,24 @@ interface TooltipProps {
       };
     }>;
     label?: string;
-  }
+}
 
 export default function Recommendations() {
   const [selectedStock, setSelectedStock] = useState<StockRecommendation | null>(null);
   const [filterSector, setFilterSector] = useState('All');
   const [filterRecommendation, setFilterRecommendation] = useState('All');
+  const [stockRecommendations, setStockRecommendations] = useState<StockRecommendation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Sample stock recommendations data
-  const stockRecommendations: StockRecommendation[] = [
+  // Initial stock recommendations data
+  const initialRecommendations: StockRecommendation[] = [
     {
       symbol: "AAPL",
       name: "Apple Inc.",
-      currentPrice: 187.68,
+      currentPrice: 0,
       targetPrice: 215.00,
-      change: 1.23,
-      percentChange: 0.66,
+      change: 0,
+      percentChange: 0,
       recommendation: "Buy",
       confidence: 85,
       sector: "Technology",
@@ -70,23 +76,16 @@ export default function Recommendations() {
         "Expanding services segment with recurring revenue",
         "Potential growth from AI integration in products"
       ],
-      priceHistory: [
-        {date: "Mar 1", price: 170.50},
-        {date: "Mar 8", price: 175.20},
-        {date: "Mar 15", price: 178.90},
-        {date: "Mar 22", price: 182.40},
-        {date: "Mar 29", price: 184.80},
-        {date: "Apr 5", price: 186.45},
-        {date: "Apr 12", price: 187.68}
-      ]
+      priceHistory: [],
+      isLoading: true
     },
     {
       symbol: "MSFT",
       name: "Microsoft Corporation",
-      currentPrice: 419.65,
+      currentPrice: 0,
       targetPrice: 450.00,
-      change: -2.47,
-      percentChange: -0.59,
+      change: 0,
+      percentChange: 0,
       recommendation: "Buy",
       confidence: 90,
       sector: "Technology",
@@ -96,23 +95,16 @@ export default function Recommendations() {
         "Dominant position in enterprise software",
         "Strategic acquisitions strengthening market position"
       ],
-      priceHistory: [
-        {date: "Mar 1", price: 410.20},
-        {date: "Mar 8", price: 415.40},
-        {date: "Mar 15", price: 422.60},
-        {date: "Mar 22", price: 425.10},
-        {date: "Mar 29", price: 428.30},
-        {date: "Apr 5", price: 422.12},
-        {date: "Apr 12", price: 419.65}
-      ]
+      priceHistory: [],
+      isLoading: true
     },
     {
       symbol: "TSLA",
       name: "Tesla, Inc.",
-      currentPrice: 180.05,
+      currentPrice: 0,
       targetPrice: 200.00,
-      change: 3.92,
-      percentChange: 2.22,
+      change: 0,
+      percentChange: 0,
       recommendation: "Hold",
       confidence: 65,
       sector: "Automotive",
@@ -122,23 +114,16 @@ export default function Recommendations() {
         "Potential growth from energy storage solutions",
         "Regulatory challenges in key markets"
       ],
-      priceHistory: [
-        {date: "Mar 1", price: 165.80},
-        {date: "Mar 8", price: 168.20},
-        {date: "Mar 15", price: 172.50},
-        {date: "Mar 22", price: 170.10},
-        {date: "Mar 29", price: 173.60},
-        {date: "Apr 5", price: 176.13},
-        {date: "Apr 12", price: 180.05}
-      ]
+      priceHistory: [],
+      isLoading: true
     },
     {
       symbol: "NVDA",
       name: "NVIDIA Corporation",
-      currentPrice: 950.02,
+      currentPrice: 0,
       targetPrice: 1050.00,
-      change: 20.15,
-      percentChange: 2.17,
+      change: 0,
+      percentChange: 0,
       recommendation: "Buy",
       confidence: 95,
       sector: "Technology",
@@ -148,23 +133,16 @@ export default function Recommendations() {
         "Expanding into new verticals and enterprise solutions",
         "Technology leadership in GPUs and specialized computing"
       ],
-      priceHistory: [
-        {date: "Mar 1", price: 880.10},
-        {date: "Mar 8", price: 890.50},
-        {date: "Mar 15", price: 905.70},
-        {date: "Mar 22", price: 920.30},
-        {date: "Mar 29", price: 925.60},
-        {date: "Apr 5", price: 929.87},
-        {date: "Apr 12", price: 950.02}
-      ]
+      priceHistory: [],
+      isLoading: true
     },
     {
       symbol: "JPM",
       name: "JPMorgan Chase & Co.",
-      currentPrice: 182.41,
+      currentPrice: 0,
       targetPrice: 200.00,
-      change: -0.89,
-      percentChange: -0.49,
+      change: 0,
+      percentChange: 0,
       recommendation: "Buy",
       confidence: 80,
       sector: "Finance",
@@ -174,23 +152,16 @@ export default function Recommendations() {
         "Expanding digital banking capabilities",
         "Strategic investments in fintech innovations"
       ],
-      priceHistory: [
-        {date: "Mar 1", price: 175.20},
-        {date: "Mar 8", price: 177.40},
-        {date: "Mar 15", price: 179.60},
-        {date: "Mar 22", price: 181.80},
-        {date: "Mar 29", price: 184.90},
-        {date: "Apr 5", price: 183.30},
-        {date: "Apr 12", price: 182.41}
-      ]
+      priceHistory: [],
+      isLoading: true
     },
     {
       symbol: "CVX",
       name: "Chevron Corporation",
-      currentPrice: 160.37,
+      currentPrice: 0,
       targetPrice: 150.00,
-      change: -1.25,
-      percentChange: -0.77,
+      change: 0,
+      percentChange: 0,
       recommendation: "Sell",
       confidence: 70,
       sector: "Energy",
@@ -200,17 +171,91 @@ export default function Recommendations() {
         "Regulatory pressures increasing globally",
         "High capital expenditure requirements"
       ],
-      priceHistory: [
-        {date: "Mar 1", price: 168.90},
-        {date: "Mar 8", price: 166.20},
-        {date: "Mar 15", price: 165.10},
-        {date: "Mar 22", price: 163.70},
-        {date: "Mar 29", price: 162.80},
-        {date: "Apr 5", price: 161.62},
-        {date: "Apr 12", price: 160.37}
-      ]
+      priceHistory: [],
+      isLoading: true
     }
   ];
+
+  // Fetch real-time stock data and update recommendations
+  useEffect(() => {
+    const fetchRealTimeData = async () => {
+      setIsLoading(true);
+      
+      try {
+        // Get all symbols
+        const symbols = initialRecommendations.map(stock => stock.symbol);
+        
+        // Fetch current prices for all stocks
+        const quotesData = await fetchMultipleStocks(symbols);
+        
+        // Create a map for quick lookups
+        const quotesMap = new Map();
+        quotesData.forEach(quote => {
+          quotesMap.set(quote.symbol, quote);
+        });
+        
+        // Create updated recommendations with real-time data
+        const updatedRecommendations = await Promise.all(
+          initialRecommendations.map(async (rec) => {
+            try {
+              // Get quote data
+              const quote = quotesMap.get(rec.symbol);
+              
+              // Fetch historical data
+              const histData = await fetchStockData(rec.symbol);
+              
+              // Format historical data for chart
+              const formattedHistory = histData.slice(0, 7).map(item => ({
+                date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                price: item.value
+              })).reverse();
+              
+              // Return updated recommendation
+              return {
+                ...rec,
+                currentPrice: quote.price,
+                change: quote.change,
+                percentChange: quote.percentChange,
+                priceHistory: formattedHistory,
+                isLoading: false,
+                error: quote.error
+              };
+            } catch (err) {
+              console.error(`Error fetching data for ${rec.symbol}:`, err);
+              return {
+                ...rec,
+                isLoading: false,
+                error: 'Failed to load data'
+              };
+            }
+          })
+        );
+        
+        setStockRecommendations(updatedRecommendations);
+        
+        // If no stock is selected yet, select the first one
+        if (!selectedStock && updatedRecommendations.length > 0) {
+          setSelectedStock(updatedRecommendations[0]);
+        } else if (selectedStock) {
+          // Update the selected stock with real-time data
+          const updatedSelected = updatedRecommendations.find(s => s.symbol === selectedStock.symbol);
+          if (updatedSelected) {
+            setSelectedStock(updatedSelected);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching real-time data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    // Initialize with our predefined recommendations
+    setStockRecommendations(initialRecommendations);
+    
+    // Then fetch real-time data
+    fetchRealTimeData();
+  }, []);
 
   // Filter recommendations based on current filters
   const filteredRecommendations = stockRecommendations.filter(stock => {
@@ -315,17 +360,28 @@ export default function Recommendations() {
                           <span className="text-sm text-gray-400">{stock.name}</span>
                         </div>
                         <div className="flex items-center mt-1">
-                          <span className="text-sm font-medium text-white">${stock.currentPrice.toFixed(2)}</span>
-                          <span className={`ml-2 text-xs flex items-center ${
-                            stock.percentChange >= 0 ? 'text-green-500' : 'text-red-500'
-                          }`}>
-                            {stock.percentChange >= 0 ? (
-                              <ChevronUp size={14} className="mr-0.5" />
-                            ) : (
-                              <ChevronDown size={14} className="mr-0.5" />
-                            )}
-                            {Math.abs(stock.percentChange).toFixed(2)}%
-                          </span>
+                          {stock.isLoading ? (
+                            <span className="text-sm font-medium text-gray-400 flex items-center">
+                              <RefreshCw size={12} className="mr-1 animate-spin" />
+                              Loading...
+                            </span>
+                          ) : stock.error ? (
+                            <span className="text-sm font-medium text-red-400">Data unavailable</span>
+                          ) : (
+                            <>
+                              <span className="text-sm font-medium text-white">${stock.currentPrice.toFixed(2)}</span>
+                              <span className={`ml-2 text-xs flex items-center ${
+                                stock.percentChange >= 0 ? 'text-green-500' : 'text-red-500'
+                              }`}>
+                                {stock.percentChange >= 0 ? (
+                                  <ChevronUp size={14} className="mr-0.5" />
+                                ) : (
+                                  <ChevronDown size={14} className="mr-0.5" />
+                                )}
+                                {Math.abs(stock.percentChange).toFixed(2)}%
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
                       
@@ -374,19 +430,30 @@ export default function Recommendations() {
                         </span>
                       </div>
                       <div className="flex items-center mt-1">
-                        <span className="text-xl font-medium text-white">
-                          ${selectedStock.currentPrice.toFixed(2)}
-                        </span>
-                        <span className={`ml-3 text-sm flex items-center ${
-                          selectedStock.percentChange >= 0 ? 'text-green-500' : 'text-red-500'
-                        }`}>
-                          {selectedStock.percentChange >= 0 ? (
-                            <ChevronUp size={16} className="mr-0.5" />
-                          ) : (
-                            <ChevronDown size={16} className="mr-0.5" />
-                          )}
-                          {Math.abs(selectedStock.percentChange).toFixed(2)}%
-                        </span>
+                        {selectedStock.isLoading ? (
+                          <span className="text-xl font-medium text-gray-400 flex items-center">
+                            <RefreshCw size={16} className="mr-2 animate-spin" />
+                            Loading...
+                          </span>
+                        ) : selectedStock.error ? (
+                          <span className="text-xl font-medium text-red-400">Data unavailable</span>
+                        ) : (
+                          <>
+                            <span className="text-xl font-medium text-white">
+                              ${selectedStock.currentPrice.toFixed(2)}
+                            </span>
+                            <span className={`ml-3 text-sm flex items-center ${
+                              selectedStock.percentChange >= 0 ? 'text-green-500' : 'text-red-500'
+                            }`}>
+                              {selectedStock.percentChange >= 0 ? (
+                                <ChevronUp size={16} className="mr-0.5" />
+                              ) : (
+                                <ChevronDown size={16} className="mr-0.5" />
+                              )}
+                              {Math.abs(selectedStock.percentChange).toFixed(2)}%
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                     
@@ -411,38 +478,55 @@ export default function Recommendations() {
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-medium text-white">Price History</h3>
                       <div className="text-xs text-gray-400">
-                        Last 6 Weeks
+                        Last 7 Days
                       </div>
                     </div>
-                    <div className="h-48">
-                      <ResponsiveContainer>
-                        <LineChart data={selectedStock.priceHistory}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                          <XAxis 
-                            dataKey="date" 
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 12, fill: '#9CA3AF' }}
-                          />
-                          <YAxis 
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 12, fill: '#9CA3AF' }}
-                            domain={['dataMin - 5', 'dataMax + 5']}
-                            tickFormatter={(value) => `$${value}`}
-                          />
-                          <Tooltip content={<CustomTooltip />} />
-                          <Line 
-                            type="monotone" 
-                            dataKey="price" 
-                            stroke="#10B981" 
-                            strokeWidth={2}
-                            dot={false}
-                            activeDot={{ r: 6, fill: '#10B981' }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
+                    
+                    {selectedStock.isLoading ? (
+                      <div className="h-48 flex items-center justify-center">
+                        <div className="flex items-center text-gray-400">
+                          <RefreshCw size={20} className="mr-2 animate-spin" />
+                          Loading price history...
+                        </div>
+                      </div>
+                    ) : selectedStock.error || selectedStock.priceHistory.length === 0 ? (
+                      <div className="h-48 flex items-center justify-center">
+                        <div className="flex items-center text-gray-400">
+                          <Info size={20} className="mr-2" />
+                          Price history unavailable
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="h-48">
+                        <ResponsiveContainer>
+                          <LineChart data={selectedStock.priceHistory}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                            <XAxis 
+                              dataKey="date" 
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                            />
+                            <YAxis 
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                              domain={['dataMin - 5', 'dataMax + 5']}
+                              tickFormatter={(value) => `$${value}`}
+                            />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Line 
+                              type="monotone" 
+                              dataKey="price" 
+                              stroke="#10B981" 
+                              strokeWidth={2}
+                              dot={false}
+                              activeDot={{ r: 6, fill: '#10B981' }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Analysis & Reasoning */}
