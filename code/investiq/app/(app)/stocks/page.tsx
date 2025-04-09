@@ -249,7 +249,7 @@ export default function StocksPage() {
             <AlertCircle size={20} className="text-yellow-500 mr-3 mt-0.5" />
             <div>
               <p className="text-sm text-gray-300">
-                <span className="font-medium text-white">Note:</span> Stock data is provided by Polygon.io API. The free tier has usage limits of 5 API calls per minute. If you experience issues loading data, it may be due to these rate limits.
+                <span className="font-medium text-white">Note:</span> Stock data is provided by Finnhub API. The free tier has usage limits of 60 API calls per minute. If you experience issues loading data, it may be due to these rate limits.
               </p>
               <p className="text-xs text-gray-400 mt-1">
                 Data includes daily prices for the past 30 days.

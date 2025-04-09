@@ -5,7 +5,7 @@ const config = {
     
     // Alternative APIs you might consider:
     // Finnhub API key - https://finnhub.io/
-    finnhubApiKey: '',
+    finnhubApiKey: 'csjefjpr01qujq2apfhgcsjefjpr01qujq2apfi0',
     
     // Polygon.io API key - https://polygon.io/
     polygonApiKey: 'GMjCJdNFapVqQwaJ4TroDadM2xLczWpF',
