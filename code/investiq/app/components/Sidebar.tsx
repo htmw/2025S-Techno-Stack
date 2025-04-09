@@ -6,7 +6,8 @@ import {
   Target, 
   LineChart, 
   User,
-  X
+  X,
+  BarChart // Added for stocks icon
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
@@ -71,6 +72,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           <Link href="/portfolio" className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition-colors">
             <LineChart size={20} />
             <span>Portfolio</span>
+          </Link>
+          
+          <Link href="/stocks" className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition-colors">
+            <BarChart size={20} />
+            <span>Stocks</span>
           </Link>
           
           <Link href="/recommendations" className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition-colors">
