@@ -1,4 +1,4 @@
-// StockChart.tsx
+// app/StockChart.tsx
 'use client';
 
 import React, { useMemo } from 'react';
@@ -35,11 +35,13 @@ interface StockChartProps {
   error: string | null;
 }
 
-const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
+const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-black p-3 border border-green-500 rounded-lg shadow-lg text-white">
-        <p className="font-medium">${payload[0].value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+        <p className="font-medium">
+          ${payload[0].value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </p>
         <p className="text-xs text-gray-400">{payload[0].payload.formattedDate}</p>
       </div>
     );
@@ -48,9 +50,9 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
 };
 
 const StockChart: React.FC<StockChartProps> = ({ data, symbol, isLoading, error }) => {
-  const processedData = useMemo(() => {
+  const processedData = useMemo< (StockDataPoint & { formattedDate: string })[] | null>(() => {
     if (!data) return null;
-    
+
     return data.map(item => ({
       ...item,
       formattedDate: new Date(item.date).toLocaleDateString('en-US', {
@@ -76,18 +78,11 @@ const StockChart: React.FC<StockChartProps> = ({ data, symbol, isLoading, error 
     const change = currentPrice - previousPrice;
     const percentChange = (change / previousPrice) * 100;
 
-    // Add small padding to min/max for better visualization
     const allValues = data.map(item => item.value);
     const minValue = Math.min(...allValues) * 0.995;
     const maxValue = Math.max(...allValues) * 1.005;
 
-    return {
-      currentPrice,
-      change,
-      percentChange,
-      minValue,
-      maxValue
-    };
+    return { currentPrice, change, percentChange, minValue, maxValue };
   }, [data]);
 
   if (isLoading) {
@@ -142,55 +137,54 @@ const StockChart: React.FC<StockChartProps> = ({ data, symbol, isLoading, error 
               ${metrics.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
             <div className={`ml-3 flex items-center ${metrics.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              {metrics.change >= 0 ? (
-                <ArrowUp size={16} className="mr-1" />
-              ) : (
-                <ArrowDown size={16} className="mr-1" />
-              )}
+              {metrics.change >= 0 ? <ArrowUp size={16} className="mr-1" /> : <ArrowDown size={16} className="mr-1" />}
               <span className="text-sm font-medium">
                 {metrics.change >= 0 ? '+' : ''}
-                {metrics.change.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
+                {metrics.change.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 ({metrics.percentChange >= 0 ? '+' : ''}
                 {metrics.percentChange.toFixed(2)}%)
               </span>
             </div>
           </div>
         </div>
-        
+
+        {/* ← use processedData here so TS knows it's non‑null */}
         <div className="flex items-center text-xs text-gray-400">
           <Calendar size={14} className="mr-1" />
-          Last updated: {new Date(data[0].date).toLocaleDateString()}
+          Last updated: {new Date(processedData[0].date).toLocaleDateString()}
         </div>
       </div>
-      
+
       <div className="h-[300px]">
         <ResponsiveContainer>
           <LineChart data={processedData}>
             <defs>
               <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
+                <stop offset="5%" stopColor="#10B981" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#10B981" stopOpacity={0.1} />
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#374151" />
-            <XAxis 
+            <XAxis
               dataKey="formattedDate"
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 12, fill: '#9CA3AF' }}
               dy={10}
             />
-            <YAxis 
+            <YAxis
               domain={[metrics.minValue, metrics.maxValue]}
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 12, fill: '#9CA3AF' }}
               dx={-5}
-              tickFormatter={(value) => `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              tickFormatter={(v) =>
+                `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              }
             />
             <Tooltip content={<CustomTooltip />} />
             <ReferenceLine y={metrics.currentPrice} stroke="#6B7280" strokeDasharray="3 3" />
-            <Line 
+            <Line
               type="monotone"
               dataKey="value"
               stroke="#10B981"
