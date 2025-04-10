@@ -2,10 +2,18 @@
 
 import config from '../config';
 
-// --- Constants & Types ---
+// ——————————————————————————————————————————————————————————
+// API keys & endpoints (from your config.ts)
+// ——————————————————————————————————————————————————————————
 const FINNHUB_KEY = config.finnhubApiKey;
 const FINNHUB_URL = 'https://finnhub.io/api/v1';
 
+const AV_KEY = config.alphaVantageApiKey;
+const AV_URL = 'https://www.alphavantage.co/query';
+
+// ——————————————————————————————————————————————————————————
+// Types
+// ——————————————————————————————————————————————————————————
 export interface StockDataPoint {
   date: string;
   value: number;
@@ -26,52 +34,83 @@ export interface SearchResult {
   region: string;
 }
 
-// --- Helpers ---
-const formatDate = (date: Date): string =>
-  date.toISOString().split('T')[0];
-
-// Timestamps for the last 30 days
+// ——————————————————————————————————————————————————————————
+// Helpers
+// ——————————————————————————————————————————————————————————
+const formatDate = (d: Date) => d.toISOString().split('T')[0];
 const nowTs = Math.floor(Date.now() / 1000);
 const thirtyDaysAgoTs = nowTs - 30 * 24 * 60 * 60;
 
-// --- fetchStockData (no more random fallback) ---
+// ——————————————————————————————————————————————————————————
+// 1) fetchStockData: try Finnhub, fall back to AlphaVantage
+// ——————————————————————————————————————————————————————————
 export const fetchStockData = async (
   symbol: string
 ): Promise<StockDataPoint[]> => {
-  const url = `${FINNHUB_URL}/stock/candle`
-    + `?symbol=${symbol}`
-    + `&resolution=D&from=${thirtyDaysAgoTs}&to=${nowTs}`
-    + `&token=${FINNHUB_KEY}`;
+  // Finnhub candle URL
+  const fhUrl =
+    `${FINNHUB_URL}/stock/candle?symbol=${symbol}` +
+    `&resolution=D&from=${thirtyDaysAgoTs}&to=${nowTs}` +
+    `&token=${FINNHUB_KEY}`;
 
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(
-      `Failed to fetch ${symbol} historical data: ${res.status} ${res.statusText}`
+  try {
+    const res = await fetch(fhUrl);
+    if (!res.ok) {
+      console.warn(`Finnhub /candle ${symbol} failed (${res.status}), falling back…`);
+      throw new Error(`FH ${res.status}`);
+    }
+    const data = await res.json();
+    if (data.s !== 'ok' || !Array.isArray(data.c) || data.c.length === 0) {
+      console.warn(`Finnhub returned no data for ${symbol}, falling back…`);
+      throw new Error('FH no_data');
+    }
+    // Map to StockDataPoint[]
+    const fhPoints: StockDataPoint[] = data.t.map(
+      (ts: number, idx: number) => ({
+        date: formatDate(new Date(ts * 1000)),
+        value: data.c[idx],
+      })
     );
+    return fhPoints.reverse();
+  } catch (fhErr) {
+    // AlphaVantage fallback
+    console.warn(`Using AlphaVantage fallback for ${symbol}:`, fhErr);
+
+    const avUrl =
+      `${AV_URL}?function=TIME_SERIES_DAILY` +
+      `&symbol=${symbol}` +
+      `&outputsize=compact` +
+      `&apikey=${AV_KEY}`;
+
+    const avRes = await fetch(avUrl);
+    if (!avRes.ok) {
+      throw new Error(
+        `AlphaVantage fetch failed: ${avRes.status} ${avRes.statusText}`
+      );
+    }
+    const avJson = await avRes.json();
+    const series = avJson['Time Series (Daily)'];
+    if (!series) {
+      throw new Error('AlphaVantage returned no time series');
+    }
+    // Grab newest 30 days
+    const dates = Object.keys(series)
+      .sort((a, b) => (a < b ? 1 : -1)) // descending
+      .slice(0, 30);
+
+    return dates.map(dateStr => ({
+      date: dateStr,
+      value: parseFloat(series[dateStr]['4. close']),
+    }));
   }
-
-  const data = await res.json();
-  if (data.s !== 'ok' || !Array.isArray(data.c) || data.c.length === 0) {
-    throw new Error(`No historical data available for ${symbol}`);
-  }
-
-  // Map timestamps → StockDataPoint[]
-  const points: StockDataPoint[] = data.t.map(
-    (ts: number, idx: number) => ({
-      date: formatDate(new Date(ts * 1000)),
-      value: data.c[idx],
-    })
-  );
-
-  // Return newest‑first
-  return points.reverse();
 };
 
-// --- fetchMultipleStocks (real‑time quotes) ---
+// ——————————————————————————————————————————————————————————
+// 2) fetchMultipleStocks: real‑time quotes from Finnhub
+// ——————————————————————————————————————————————————————————
 export const fetchMultipleStocks = async (
   symbols: string[]
 ): Promise<StockQuote[]> => {
-  // One request per symbol
   const results = await Promise.all(
     symbols.map(async (symbol) => {
       try {
@@ -86,16 +125,24 @@ export const fetchMultipleStocks = async (
           change: d.d,
           percentChange: d.dp,
         } as StockQuote;
-      } catch {
-        // propagate error flag so DataService can fallback if desired
-        return { symbol, price: 0, change: 0, percentChange: 0, error: 'Fetch error' };
+      } catch (err: any) {
+        console.warn(`Error fetching quote for ${symbol}:`, err);
+        return {
+          symbol,
+          price: 0,
+          change: 0,
+          percentChange: 0,
+          error: err.message || 'Fetch error',
+        };
       }
     })
   );
   return results;
 };
 
-// --- searchStocks (unchanged) ---
+// ——————————————————————————————————————————————————————————
+// 3) searchStocks (unchanged)
+// ——————————————————————————————————————————————————————————
 export const searchStocks = async (
   query: string
 ): Promise<SearchResult[]> => {
