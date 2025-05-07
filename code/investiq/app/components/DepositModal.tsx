@@ -8,41 +8,12 @@ interface DepositModalProps {
   onClose: () => void;
 }
 
-interface DepositTransaction {
-  id: string;
-  amount: number;
-  method: string;
-  date: string;
-}
-
 const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('bank');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [totalDeposits, setTotalDeposits] = useState(0);
-  const [transactions, setTransactions] = useState<DepositTransaction[]>([]);
-
-  // Load previous deposits when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      try {
-        // Load total deposits
-        const savedDeposits = localStorage.getItem('deposits');
-        if (savedDeposits) {
-          setTotalDeposits(parseFloat(savedDeposits));
-        }
-        
-        // Load transaction history
-        const savedTransactions = localStorage.getItem('depositTransactions');
-        if (savedTransactions) {
-          setTransactions(JSON.parse(savedTransactions));
-        }
-      } catch (err) {
-        console.error('Error loading deposits from localStorage:', err);
-      }
-    }
-  }, [isOpen]);
+  const [cashBalance, setCashBalance] = useState(0);
 
   // Quick deposit amounts
   const quickAmounts = [100, 500, 1000, 5000];
@@ -53,6 +24,34 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
     { id: 'card', name: 'Credit Card', icon: CreditCard, description: 'Instant deposit with 1.5% fee' },
   ];
 
+  // Load current cash balance when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      try {
+        // Get current cash balance
+        const balance = localStorage.getItem('cashBalance');
+        if (balance) {
+          setCashBalance(parseFloat(balance));
+        } else {
+          // Check if there are older deposits
+          const deposits = localStorage.getItem('deposits');
+          if (deposits) {
+            const depositAmount = parseFloat(deposits);
+            setCashBalance(depositAmount);
+            
+            // Initialize cash balance in localStorage
+            localStorage.setItem('cashBalance', depositAmount.toString());
+          } else {
+            setCashBalance(0);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading cash balance:', err);
+        setCashBalance(0);
+      }
+    }
+  }, [isOpen]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !paymentMethod) return;
@@ -62,26 +61,16 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
 
     setIsProcessing(true);
     
-    // Create new transaction
-    const newTransaction: DepositTransaction = {
-      id: Date.now().toString(),
-      amount: depositAmount,
-      method: paymentMethod === 'bank' ? 'Bank Transfer' : 'Credit Card',
-      date: new Date().toISOString()
-    };
-    
     // Simulate processing delay
     setTimeout(() => {
       try {
-        // Update total deposits
-        const newTotal = totalDeposits + depositAmount;
-        localStorage.setItem('deposits', newTotal.toString());
-        setTotalDeposits(newTotal);
+        // Update cash balance
+        const newBalance = cashBalance + depositAmount;
+        setCashBalance(newBalance);
         
-        // Update transaction history
-        const updatedTransactions = [...transactions, newTransaction];
-        localStorage.setItem('depositTransactions', JSON.stringify(updatedTransactions));
-        setTransactions(updatedTransactions);
+        // Save to localStorage
+        localStorage.setItem('cashBalance', newBalance.toString());
+        localStorage.setItem('deposits', newBalance.toString()); // For backward compatibility
         
         setIsProcessing(false);
         setIsSuccess(true);
@@ -93,7 +82,7 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
       } catch (err) {
         console.error('Error saving deposit:', err);
         setIsProcessing(false);
-        // Could add error handling UI here
+        alert('Failed to process deposit. Please try again.');
       }
     }, 1500);
   };
@@ -134,10 +123,10 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
               </div>
               <h3 className="text-xl font-bold text-white mb-2">Deposit Successful</h3>
               <p className="text-gray-400 text-center mb-2">
-                Your deposit of ${parseFloat(amount).toLocaleString()} is being processed
+                Your deposit of ${parseFloat(amount).toLocaleString()} has been added
               </p>
               <p className="text-gray-400 text-center mb-6">
-                Total deposits: ${totalDeposits.toLocaleString()}
+                Available balance: <span className="text-green-500 font-medium">${cashBalance.toLocaleString()}</span>
               </p>
               <button
                 onClick={resetForm}
@@ -148,13 +137,13 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              {/* Current total */}
-              {totalDeposits > 0 && (
-                <div className="mb-4 p-3 bg-gray-800 rounded-lg">
-                  <p className="text-sm text-gray-300">Total deposits so far</p>
-                  <p className="text-lg font-medium text-white">${totalDeposits.toLocaleString()}</p>
+              {/* Current Balance */}
+              <div className="mb-6 p-4 bg-gray-800 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-medium text-white">Available Balance</h3>
+                  <span className="text-lg text-green-500 font-medium">${cashBalance.toLocaleString()}</span>
                 </div>
-              )}
+              </div>
               
               {/* Amount */}
               <div className="mb-6">
