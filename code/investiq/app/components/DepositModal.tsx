@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, CreditCard, Building, DollarSign, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 interface DepositModalProps {
@@ -8,11 +8,41 @@ interface DepositModalProps {
   onClose: () => void;
 }
 
+interface DepositTransaction {
+  id: string;
+  amount: number;
+  method: string;
+  date: string;
+}
+
 const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
   const [amount, setAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('bank');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [totalDeposits, setTotalDeposits] = useState(0);
+  const [transactions, setTransactions] = useState<DepositTransaction[]>([]);
+
+  // Load previous deposits when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      try {
+        // Load total deposits
+        const savedDeposits = localStorage.getItem('deposits');
+        if (savedDeposits) {
+          setTotalDeposits(parseFloat(savedDeposits));
+        }
+        
+        // Load transaction history
+        const savedTransactions = localStorage.getItem('depositTransactions');
+        if (savedTransactions) {
+          setTransactions(JSON.parse(savedTransactions));
+        }
+      } catch (err) {
+        console.error('Error loading deposits from localStorage:', err);
+      }
+    }
+  }, [isOpen]);
 
   // Quick deposit amounts
   const quickAmounts = [100, 500, 1000, 5000];
@@ -27,23 +57,50 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
     e.preventDefault();
     if (!amount || !paymentMethod) return;
 
+    const depositAmount = parseFloat(amount);
+    if (isNaN(depositAmount) || depositAmount <= 0) return;
+
     setIsProcessing(true);
+    
+    // Create new transaction
+    const newTransaction: DepositTransaction = {
+      id: Date.now().toString(),
+      amount: depositAmount,
+      method: paymentMethod === 'bank' ? 'Bank Transfer' : 'Credit Card',
+      date: new Date().toISOString()
+    };
     
     // Simulate processing delay
     setTimeout(() => {
-      setIsProcessing(false);
-      setIsSuccess(true);
-      
-      // Reset and close after showing success
-      setTimeout(() => {
-        resetForm();
-      }, 2000);
+      try {
+        // Update total deposits
+        const newTotal = totalDeposits + depositAmount;
+        localStorage.setItem('deposits', newTotal.toString());
+        setTotalDeposits(newTotal);
+        
+        // Update transaction history
+        const updatedTransactions = [...transactions, newTransaction];
+        localStorage.setItem('depositTransactions', JSON.stringify(updatedTransactions));
+        setTransactions(updatedTransactions);
+        
+        setIsProcessing(false);
+        setIsSuccess(true);
+        
+        // Reset and close after showing success
+        setTimeout(() => {
+          resetForm();
+        }, 2000);
+      } catch (err) {
+        console.error('Error saving deposit:', err);
+        setIsProcessing(false);
+        // Could add error handling UI here
+      }
     }, 1500);
   };
 
   const resetForm = () => {
     setAmount('');
-    setPaymentMethod('');
+    setPaymentMethod('bank');
     setIsSuccess(false);
     onClose();
   };
@@ -76,8 +133,11 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
                 <CheckCircle2 size={32} className="text-green-500" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">Deposit Successful</h3>
-              <p className="text-gray-400 text-center mb-6">
+              <p className="text-gray-400 text-center mb-2">
                 Your deposit of ${parseFloat(amount).toLocaleString()} is being processed
+              </p>
+              <p className="text-gray-400 text-center mb-6">
+                Total deposits: ${totalDeposits.toLocaleString()}
               </p>
               <button
                 onClick={resetForm}
@@ -88,6 +148,14 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
+              {/* Current total */}
+              {totalDeposits > 0 && (
+                <div className="mb-4 p-3 bg-gray-800 rounded-lg">
+                  <p className="text-sm text-gray-300">Total deposits so far</p>
+                  <p className="text-lg font-medium text-white">${totalDeposits.toLocaleString()}</p>
+                </div>
+              )}
+              
               {/* Amount */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-300 mb-2">
