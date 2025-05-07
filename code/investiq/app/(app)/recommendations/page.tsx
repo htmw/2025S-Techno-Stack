@@ -59,22 +59,43 @@ export default function Recommendations() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // Mock recommendation data for initial rendering
+  const getMockRecommendation = (): Recommendation => ({
+    period: new Date().toISOString().split('T')[0],
+    strongBuy: Math.floor(Math.random() * 10) + 1,
+    buy: Math.floor(Math.random() * 15) + 5,
+    hold: Math.floor(Math.random() * 20) + 10,
+    sell: Math.floor(Math.random() * 8),
+    strongSell: Math.floor(Math.random() * 5)
+  });
+  
   // Fetch recommendations data
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       setError(null);
       
-      // Initialize stock list with loading state
-      const initialStocks = STOCKS.map(stock => ({
-        ...stock,
-        recommendations: [],
-        isLoading: true
-      }));
+      // Initialize stock list with mock data to prevent loading state
+      const initialStocks = STOCKS.map(stock => {
+        // Create an array of 3 mock recommendations
+        const mockRecommendations = Array(3).fill(null).map(() => getMockRecommendation());
+        
+        return {
+          ...stock,
+          recommendations: mockRecommendations,
+          isLoading: false
+        };
+      });
       
       setStockList(initialStocks);
       setSelectedStock(initialStocks[0]);
+      setIsLoading(false);
       
+      // No need to actually fetch from API for demo purposes
+      // The mock data will be displayed immediately
+      
+      // If you want to enable real API calls, uncomment the code below
+      /*
       try {
         for (const stock of initialStocks) {
           try {
@@ -123,6 +144,7 @@ export default function Recommendations() {
       } finally {
         setIsLoading(false);
       }
+      */
     };
     
     fetchData();
@@ -404,7 +426,7 @@ export default function Recommendations() {
           <div className="flex items-start">
             <Info size={16} className="text-green-500 mr-2 mt-0.5" />
             <div className="text-sm text-gray-300">
-              Data provided by Finnhub's Analyst Recommendations API. 
+              Demo data shown. In a production environment, this would use data from Finnhub's Analyst Recommendations API.
               These recommendations reflect analysts' opinions and should not be considered as financial advice.
             </div>
           </div>
