@@ -26,6 +26,7 @@ import {
   Cell,
   Legend
 } from 'recharts';
+import HistoricalTrends from '../../components/HistoricalTrends';
 
 interface TooltipProps {
     active?: boolean;
@@ -234,6 +235,17 @@ export default function Portfolio() {
             >
               <LineChartIcon size={16} className="mr-2" />
               Performance
+            </button>
+            <button
+              className={`px-4 py-2 text-sm rounded-md flex items-center ${
+                viewMode === 'trends' 
+                  ? 'bg-green-500 text-black font-medium' 
+                  : 'text-gray-400 hover:text-white'
+              }`}
+              onClick={() => setViewMode('trends')}
+            >
+              <TrendingUp size={16} className="mr-2" />
+              Trends
             </button>
           </div>
           
@@ -492,6 +504,10 @@ export default function Portfolio() {
               </div>
             </div>
           </div>
+        )}
+        
+        {viewMode === 'trends' && (
+          <HistoricalTrends />
         )}
       </div>
     </div>
