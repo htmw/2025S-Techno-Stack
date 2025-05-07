@@ -2,28 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  BarChart3, 
-  ArrowUp, 
-  ArrowDown, 
-  Plus,
-  Filter,
-  RefreshCw,
-  X,
-  Save,
-  DollarSign,
-  Trash2
+  BarChart3, ArrowUp, ArrowDown, Plus, 
+  RefreshCw, X, Save, DollarSign, Trash2 
 } from "lucide-react";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer
+  LineChart, Line, XAxis, YAxis, CartesianGrid, 
+  Tooltip, ResponsiveContainer
 } from 'recharts';
 import { fetchMultipleStocks, searchStocks } from '../../services/StockService';
-import config from '../../config';
 
 interface Holding {
   symbol: string;
@@ -40,29 +26,20 @@ interface Holding {
 export default function Portfolio() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showAddPositionModal, setShowAddPositionModal] = useState(false);
   const [newPosition, setNewPosition] = useState({ symbol: '', name: '', shares: '', avgCost: '' });
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   
-  const performanceData = [
-    { date: 'Jan', value: 10000 },
-    { date: 'Feb', value: 10800 },
-    { date: 'Mar', value: 11500 },
-    { date: 'Apr', value: 12200 },
-    { date: 'May', value: 13000 },
-    { date: 'Jun', value: 12500 },
-    { date: 'Jul', value: 13200 },
-    { date: 'Aug', value: 13800 },
-    { date: 'Sep', value: 14500 },
-    { date: 'Oct', value: 15000 },
-    { date: 'Nov', value: 15600 },
-    { date: 'Dec', value: 15800 },
-  ];
+  // Sample performance data - this would ideally come from an API
+  const [performanceData, setPerformanceData] = useState([]);
 
   // Load portfolio from localStorage and update with current prices
   useEffect(() => {
+    loadPortfolio();
+  }, []);
+
+  const loadPortfolio = async () => {
     setIsLoading(true);
     try {
       const savedPortfolio = localStorage.getItem('portfolio');
@@ -70,22 +47,61 @@ export default function Portfolio() {
       
       if (initialHoldings.length > 0) {
         const symbols = initialHoldings.map((holding: Holding) => holding.symbol);
-        fetchCurrentPrices(symbols, initialHoldings);
+        await fetchCurrentPrices(symbols, initialHoldings);
       } else {
         setHoldings([]);
+        generateDefaultPerformance();
         setIsLoading(false);
       }
     } catch (err) {
       console.error('Error loading portfolio:', err);
-      setError('Failed to load portfolio data.');
       setIsLoading(false);
     }
-  }, []);
+  };
+
+  // Generate default performance data
+  const generateDefaultPerformance = () => {
+    // Show data only from February to May
+    const defaultData = [
+      { date: 'Feb', value: 14500 },
+      { date: 'Mar', value: 15000 },
+      { date: 'Apr', value: 15600 },
+      { date: 'May', value: 15800 },
+    ];
+    setPerformanceData(defaultData);
+  };
+
+  // Generate portfolio performance based on holdings
+  const generatePortfolioPerformance = (holdings: Holding[]) => {
+    // Calculate initial investment value
+    const initialInvestment = holdings.reduce((sum, h) => sum + (h.avgCost * h.shares), 0);
+    const currentValue = holdings.reduce((sum, h) => sum + h.value, 0);
+    
+    // Generate data points (Feb to May - 4 months)
+    const dataPoints = 4;
+    const result = [];
+    const startValue = initialInvestment * 0.95; // Start at 95% of initial investment
+    
+    // Show data only from February to May
+    const months = ['Feb', 'Mar', 'Apr', 'May'];
+    
+    for (let i = 0; i < dataPoints; i++) {
+      const progress = i / dataPoints;
+      const randomFactor = (Math.random() * 0.02) - 0.01; // Random -1% to +1%
+      const value = startValue + (progress * (currentValue - startValue)) + (initialInvestment * randomFactor);
+      
+      result.push({
+        date: months[i],
+        value: Math.round(value * 100) / 100
+      });
+    }
+    
+    setPerformanceData(result);
+  };
 
   // Fetch current stock prices
   const fetchCurrentPrices = async (symbols: string[], initialHoldings: any[]) => {
     try {
-      // Using fetchMultipleStocks instead of getStockQuotes
       const quotes = await fetchMultipleStocks(symbols);
       
       // Update holdings with current prices
@@ -108,9 +124,9 @@ export default function Portfolio() {
       }));
       
       setHoldings(holdingsWithWeights);
+      generatePortfolioPerformance(holdingsWithWeights);
     } catch (err) {
       console.error('Error fetching prices:', err);
-      setError('Failed to update prices.');
     } finally {
       setIsLoading(false);
     }
@@ -125,7 +141,6 @@ export default function Portfolio() {
     
     setIsSearching(true);
     try {
-      // Using the searchStocks function from StockService
       const results = await searchStocks(query);
       setSearchResults(results);
     } catch (err) {
@@ -182,6 +197,7 @@ export default function Portfolio() {
       // Update state and localStorage
       setHoldings(holdingsWithWeights);
       localStorage.setItem('portfolio', JSON.stringify(holdingsWithWeights));
+      generatePortfolioPerformance(holdingsWithWeights);
       
       // Reset form and close modal
       setNewPosition({ symbol: '', name: '', shares: '', avgCost: '' });
@@ -207,13 +223,13 @@ export default function Portfolio() {
       // Update state and localStorage
       setHoldings(holdingsWithWeights);
       localStorage.setItem('portfolio', JSON.stringify(holdingsWithWeights));
+      generatePortfolioPerformance(holdingsWithWeights);
     }
   };
 
   // Refresh portfolio data
   const refreshPortfolio = async () => {
     if (holdings.length === 0) return;
-    
     setIsLoading(true);
     const symbols = holdings.map(h => h.symbol);
     fetchCurrentPrices(symbols, holdings);
@@ -221,6 +237,11 @@ export default function Portfolio() {
 
   // Calculate total portfolio value
   const totalValue = holdings.reduce((total, stock) => total + stock.value, 0);
+  
+  // Calculate total gain percentage
+  const totalGain = holdings.reduce((sum, h) => sum + h.gain, 0);
+  const totalInvestment = holdings.reduce((sum, h) => sum + (h.avgCost * h.shares), 0);
+  const totalGainPercent = totalInvestment > 0 ? (totalGain / totalInvestment) * 100 : 0;
   
   // Custom tooltip for chart
   const CustomTooltip = ({ active, payload }: any) => {
@@ -258,12 +279,9 @@ export default function Portfolio() {
                   ) : (
                     <>
                       <span className="text-2xl font-bold text-white">${totalValue.toLocaleString(undefined, {maximumFractionDigits: 2})}</span>
-                      <span className="text-green-500 flex items-center text-sm font-medium">
-                        <ArrowUp size={14} className="mr-1" />
-                        {holdings.length > 0 ? 
-                          `${(holdings.reduce((sum, h) => sum + h.gain, 0) / (totalValue - holdings.reduce((sum, h) => sum + h.gain, 0)) * 100).toFixed(2)}%` : 
-                          '0.00%'
-                        }
+                      <span className={`flex items-center text-sm font-medium ${totalGain >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {totalGain >= 0 ? <ArrowUp size={14} className="mr-1" /> : <ArrowDown size={14} className="mr-1" />}
+                        {holdings.length > 0 ? `${totalGainPercent.toFixed(2)}%` : '0.00%'}
                       </span>
                     </>
                   )}
