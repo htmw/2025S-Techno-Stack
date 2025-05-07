@@ -20,7 +20,7 @@ import {
 } from 'recharts';
 import { fetchMultipleStocks } from '../../services/StockService';
 import { fetchMarketNews } from '../../services/NewsService';
-import { getPortfolioHistory, DEFAULT_WATCHLIST } from '../../services/DataService';
+import { DEFAULT_WATCHLIST } from '../../services/DataService';
 import IPOCalendar from '../../components/IPOCalendar';
 
 interface TooltipProps {
@@ -66,7 +66,7 @@ export default function Dashboard() {
   const [portfolioValue, setPortfolioValue] = useState<number>(0);
   const [portfolioGain, setPortfolioGain] = useState<number>(0);
   const [portfolioGainPercent, setPortfolioGainPercent] = useState<number>(0);
-  const [portfolioHistory, setPortfolioHistory] = useState<any[]>([]);
+  const [portfolioPerformance, setPortfolioPerformance] = useState<any[]>([]);
   const [topMovers, setTopMovers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState({
     portfolio: true,
@@ -77,6 +77,9 @@ export default function Dashboard() {
   // Load deposits and portfolio from localStorage
   const [totalDeposits, setTotalDeposits] = useState(0);
   const [portfolioHoldings, setPortfolioHoldings] = useState<Holding[]>([]);
+
+  // Time range options
+  const timeRanges = ['1D', '1W', '1M', '3M', '1Y', 'All'];
 
   // Load data from localStorage
   useEffect(() => {
@@ -102,28 +105,113 @@ export default function Dashboard() {
         setPortfolioValue(totalValue);
         setPortfolioGain(totalGain);
         setPortfolioGainPercent(gainPercent);
+        
+        // Generate portfolio performance data based on holdings and time range
+        generatePortfolioPerformance(holdings, timeRange);
+      } else {
+        // Generate default performance data if no portfolio exists
+        generateDefaultPerformance();
       }
     } catch (err) {
       console.error('Error loading data from localStorage:', err);
+      generateDefaultPerformance();
+    } finally {
+      setIsLoading(prev => ({ ...prev, portfolio: false }));
     }
-  }, []);
-
-  // Load portfolio history and watchlist
-  useEffect(() => {
-    const fetchPortfolioData = async () => {
-      try {
-        // Get portfolio history
-        const history = await getPortfolioHistory(timeRange);
-        setPortfolioHistory(history);
-      } catch (err) {
-        console.error('Error fetching portfolio history:', err);
-      } finally {
-        setIsLoading(prev => ({ ...prev, portfolio: false }));
-      }
-    };
-
-    fetchPortfolioData();
   }, [timeRange]);
+
+  // Generate portfolio performance data based on holdings and selected time range
+  const generatePortfolioPerformance = (holdings: Holding[], selectedTimeRange: string) => {
+    // Calculate initial investment value
+    const initialInvestment = holdings.reduce((sum, h) => sum + (h.avgCost * h.shares), 0);
+    const currentValue = holdings.reduce((sum, h) => sum + h.value, 0);
+    
+    // Generate data points based on time range
+    let dataPoints = 30; // Default to 1 month
+    
+    switch (selectedTimeRange) {
+      case '1D':
+        dataPoints = 24; // Hourly for 1 day
+        break;
+      case '1W':
+        dataPoints = 7; // Daily for 1 week
+        break;
+      case '1M':
+        dataPoints = 30; // Daily for 1 month
+        break;
+      case '3M':
+        dataPoints = 90; // Daily for 3 months
+        break;
+      case '1Y':
+        dataPoints = 12; // Monthly for 1 year
+        break;
+      case 'All':
+        dataPoints = 24; // Monthly for 2 years
+        break;
+    }
+    
+    // Create a realistic performance curve based on current gain
+    const result = [];
+    // Start value between 80-90% of initial investment
+    const startValue = initialInvestment * (0.8 + Math.random() * 0.1);
+    
+    for (let i = 0; i < dataPoints; i++) {
+      // Add some randomness and a trend toward current value
+      const progress = i / dataPoints;
+      const randomFactor = (Math.random() * 0.04) - 0.02; // Random -2% to +2%
+      
+      // Calculate value with more weight toward current value as i increases
+      const value = startValue + (progress * (currentValue - startValue)) + (initialInvestment * randomFactor);
+      
+      // Format date label based on time range
+      let dateLabel;
+      const today = new Date();
+      
+      if (selectedTimeRange === '1D') {
+        dateLabel = `${i}h`;
+      } else if (selectedTimeRange === '1W' || selectedTimeRange === '1M') {
+        const date = new Date();
+        date.setDate(today.getDate() - (dataPoints - i - 1));
+        dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } else if (selectedTimeRange === '3M') {
+        const date = new Date();
+        date.setDate(today.getDate() - (dataPoints - i - 1));
+        dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } else {
+        // For longer ranges, use month names
+        const date = new Date();
+        date.setMonth(today.getMonth() - (dataPoints - i - 1));
+        dateLabel = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      }
+      
+      result.push({
+        date: dateLabel,
+        value: Math.round(value * 100) / 100
+      });
+    }
+    
+    setPortfolioPerformance(result);
+  };
+
+  // Generate default performance data if no portfolio exists
+  const generateDefaultPerformance = () => {
+    const performanceData = [
+      { date: 'Jan', value: 10000 },
+      { date: 'Feb', value: 10800 },
+      { date: 'Mar', value: 11500 },
+      { date: 'Apr', value: 12200 },
+      { date: 'May', value: 13000 },
+      { date: 'Jun', value: 12500 },
+      { date: 'Jul', value: 13200 },
+      { date: 'Aug', value: 13800 },
+      { date: 'Sep', value: 14500 },
+      { date: 'Oct', value: 15000 },
+      { date: 'Nov', value: 15600 },
+      { date: 'Dec', value: 15800 },
+    ];
+    
+    setPortfolioPerformance(performanceData);
+  };
 
   // WATCHLIST & TOP MOVERS
   useEffect(() => {
@@ -160,9 +248,6 @@ export default function Dashboard() {
     
     fetchNews();
   }, []);
-
-  // Time range options
-  const timeRanges = ['1D', '1W', '1M', '3M', '1Y', 'All'];
 
   // Custom tooltip for chart
   const CustomTooltip = ({ active, payload }: TooltipProps) => {
@@ -308,7 +393,7 @@ export default function Dashboard() {
                     </div>
                   ) : (
                     <ResponsiveContainer>
-                      <AreaChart data={portfolioHistory} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                      <AreaChart data={portfolioPerformance} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                         <defs>
                           <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
@@ -346,7 +431,7 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {/* IPO Calendar (Replacing Market Summary) */}
+            {/* IPO Calendar */}
             <IPOCalendar />
           </div>
           
