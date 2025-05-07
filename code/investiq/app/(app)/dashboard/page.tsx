@@ -7,7 +7,6 @@ import {
   TrendingUp,
   DollarSign,
   RefreshCw,
-  Bell,
   Filter
 } from "lucide-react";
 import {
@@ -19,9 +18,9 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
-import { getStockQuotes, getPortfolioValue, getPortfolioHistory, DEFAULT_WATCHLIST } from '../../services/DataService';
+import { fetchMultipleStocks } from '../../services/StockService';
 import { fetchMarketNews } from '../../services/NewsService';
-import { StockQuote } from '../../services/StockService';
+import { getPortfolioHistory, DEFAULT_WATCHLIST } from '../../services/DataService';
 import IPOCalendar from '../../components/IPOCalendar';
 
 interface TooltipProps {
@@ -48,60 +47,89 @@ interface NewsItem {
   url: string;
 }
 
+interface Holding {
+  symbol: string;
+  name: string;
+  shares: number;
+  avgCost: number;
+  currentPrice: number;
+  value: number;
+  weight: number;
+  gain: number;
+  gainPercent: number;
+}
+
 export default function Dashboard() {
   const [timeRange, setTimeRange] = useState('1M');
-  const [watchlist, setWatchlist] = useState<StockQuote[]>([]);
+  const [watchlist, setWatchlist] = useState<any[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [portfolioValue, setPortfolioValue] = useState<number>(0);
+  const [portfolioGain, setPortfolioGain] = useState<number>(0);
+  const [portfolioGainPercent, setPortfolioGainPercent] = useState<number>(0);
   const [portfolioHistory, setPortfolioHistory] = useState<any[]>([]);
-  const [topMovers, setTopMovers] = useState<StockQuote[]>([]);
+  const [topMovers, setTopMovers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState({
     portfolio: true,
     watchlist: true,
     news: true
   });
-  const [unreadNotifications] = useState(3);
   
-  // Load deposits from localStorage
+  // Load deposits and portfolio from localStorage
   const [totalDeposits, setTotalDeposits] = useState(0);
-  
+  const [portfolioHoldings, setPortfolioHoldings] = useState<Holding[]>([]);
+
+  // Load data from localStorage
   useEffect(() => {
     try {
+      // Load deposits
       const deposits = localStorage.getItem('deposits') 
         ? JSON.parse(localStorage.getItem('deposits') || '0') 
         : 0;
       setTotalDeposits(deposits);
+      
+      // Load portfolio holdings
+      const savedPortfolio = localStorage.getItem('portfolio');
+      if (savedPortfolio) {
+        const holdings = JSON.parse(savedPortfolio);
+        setPortfolioHoldings(holdings);
+        
+        // Calculate total portfolio value and gain
+        const totalValue = holdings.reduce((sum: number, h: Holding) => sum + h.value, 0);
+        const totalGain = holdings.reduce((sum: number, h: Holding) => sum + h.gain, 0);
+        const initialInvestment = totalValue - totalGain;
+        const gainPercent = initialInvestment > 0 ? (totalGain / initialInvestment) * 100 : 0;
+        
+        setPortfolioValue(totalValue);
+        setPortfolioGain(totalGain);
+        setPortfolioGainPercent(gainPercent);
+      }
     } catch (err) {
-      console.error('Error loading deposits:', err);
+      console.error('Error loading data from localStorage:', err);
     }
   }, []);
 
-  // PORTFOLIO DATA
+  // Load portfolio history and watchlist
   useEffect(() => {
     const fetchPortfolioData = async () => {
       try {
-        // Get portfolio value and add deposits
-        const value = await getPortfolioValue();
-        setPortfolioValue(value + totalDeposits);
-
         // Get portfolio history
         const history = await getPortfolioHistory(timeRange);
         setPortfolioHistory(history);
       } catch (err) {
-        console.error('Error fetching portfolio data:', err);
+        console.error('Error fetching portfolio history:', err);
       } finally {
         setIsLoading(prev => ({ ...prev, portfolio: false }));
       }
     };
 
     fetchPortfolioData();
-  }, [timeRange, totalDeposits]);
+  }, [timeRange]);
 
   // WATCHLIST & TOP MOVERS
   useEffect(() => {
     const fetchWatchlist = async () => {
       try {
-        const data = await getStockQuotes(DEFAULT_WATCHLIST);
+        const data = await fetchMultipleStocks(DEFAULT_WATCHLIST);
         setWatchlist(data);
         
         // Set top movers based on absolute percentage change
@@ -160,10 +188,6 @@ export default function Dashboard() {
     });
   };
 
-  // Calculate total return
-  const totalReturn = portfolioValue - 10000; // Assuming $10,000 initial investment
-  const totalReturnPercent = totalReturn / 10000 * 100;
-
   return (
     <div className="p-0">
       {/* Page header */}
@@ -188,10 +212,10 @@ export default function Dashboard() {
               </div>
             ) : (
               <>
-                <p className="text-xl font-bold text-white">${portfolioValue.toLocaleString()}</p>
+                <p className="text-xl font-bold text-white">${portfolioValue.toLocaleString(undefined, {maximumFractionDigits: 2})}</p>
                 <p className="text-sm text-green-500 flex items-center">
                   <ArrowUp size={14} className="mr-1" />
-                  {totalReturnPercent.toFixed(2)}% overall
+                  {portfolioGainPercent.toFixed(2)}% overall
                 </p>
               </>
             )}
@@ -202,7 +226,7 @@ export default function Dashboard() {
               <div className="h-8 w-8 rounded-lg bg-gray-800 flex items-center justify-center">
                 <TrendingUp size={16} className="text-green-500" />
               </div>
-              <span className="text-xs text-gray-400">Today's Change</span>
+              <span className="text-xs text-gray-400">Total Gain</span>
             </div>
             {isLoading.portfolio ? (
               <div className="h-8 flex items-center">
@@ -211,10 +235,10 @@ export default function Dashboard() {
               </div>
             ) : (
               <>
-                <p className="text-xl font-bold text-white">+$235.45</p>
+                <p className="text-xl font-bold text-white">${portfolioGain.toLocaleString(undefined, {maximumFractionDigits: 2})}</p>
                 <p className="text-sm text-green-500 flex items-center">
                   <ArrowUp size={14} className="mr-1" />
-                  1.52% today
+                  {portfolioHoldings.length > 0 ? "Since purchase" : "No holdings"}
                 </p>
               </>
             )}
@@ -223,17 +247,17 @@ export default function Dashboard() {
           <div className="bg-black p-5 rounded-xl shadow-sm border border-green-500">
             <div className="flex items-center gap-2 mb-2">
               <div className="h-8 w-8 rounded-lg bg-gray-800 flex items-center justify-center">
-                <Bell size={16} className="text-green-500" />
+                <DollarSign size={16} className="text-green-500" />
               </div>
-              <span className="text-xs text-gray-400">Notifications</span>
-              {unreadNotifications > 0 && (
-                <span className="px-1.5 py-0.5 text-xs font-medium bg-green-500 text-black rounded-full">
-                  {unreadNotifications}
-                </span>
-              )}
+              <span className="text-xs text-gray-400">Positions</span>
             </div>
-            <p className="text-xl font-bold text-white">{unreadNotifications} New</p>
-            <p className="text-sm text-green-500">View all</p>
+            <p className="text-xl font-bold text-white">{portfolioHoldings.length}</p>
+            <p className="text-sm text-green-500">
+              {portfolioHoldings.length > 0 ? 
+                `${portfolioHoldings.filter(h => h.gain > 0).length} profitable` : 
+                "Add positions in Portfolio"
+              }
+            </p>
           </div>
           
           <div className="bg-black p-5 rounded-xl shadow-sm border border-green-500">
@@ -328,6 +352,55 @@ export default function Dashboard() {
           
           {/* Right section - Watchlist & News */}
           <div className="space-y-6">
+            {/* Portfolio Holdings Summary */}
+            <div className="bg-black rounded-xl shadow-sm overflow-hidden border border-green-500">
+              <div className="p-4 flex items-center justify-between border-b border-green-500">
+                <h2 className="text-base font-bold text-white">Top Holdings</h2>
+              </div>
+              
+              {portfolioHoldings.length === 0 ? (
+                <div className="p-8 text-center">
+                  <p className="text-gray-400">You don't have any positions yet.</p>
+                  <a 
+                    href="/portfolio"
+                    className="mt-4 inline-block px-4 py-2 bg-green-500 text-black rounded-lg font-medium"
+                  >
+                    Go to Portfolio
+                  </a>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-xs text-gray-400 border-b border-gray-800">
+                        <th className="py-3 px-4 text-left">Symbol</th>
+                        <th className="py-3 px-4 text-right">Price</th>
+                        <th className="py-3 px-4 text-right">Change</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-800">
+                      {portfolioHoldings
+                        .sort((a, b) => b.value - a.value)
+                        .slice(0, 3)
+                        .map((stock) => (
+                          <tr key={stock.symbol} className="text-white">
+                            <td className="py-3 px-4 text-left font-medium">{stock.symbol}</td>
+                            <td className="py-3 px-4 text-right font-medium">${stock.currentPrice.toFixed(2)}</td>
+                            <td className="py-3 px-4 text-right">
+                              <div className={`flex items-center justify-end ${stock.gain >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                {stock.gain >= 0 ? <ArrowUp size={14} className="mr-1" /> : <ArrowDown size={14} className="mr-1" />}
+                                {stock.gainPercent.toFixed(2)}%
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+            
             {/* Watchlist */}
             <div className="bg-black rounded-xl shadow-sm overflow-hidden border border-green-500">
               <div className="p-4 flex items-center justify-between border-b border-green-500">
