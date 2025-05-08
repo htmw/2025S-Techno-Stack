@@ -21,13 +21,20 @@ interface Holding {
   weight: number;
   gain: number;
   gainPercent: number;
+  purchaseDate?: string; // Optional purchase date
 }
 
 export default function Portfolio() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddPositionModal, setShowAddPositionModal] = useState(false);
-  const [newPosition, setNewPosition] = useState({ symbol: '', name: '', shares: '', avgCost: '' });
+  const [newPosition, setNewPosition] = useState({ 
+    symbol: '', 
+    name: '', 
+    shares: '', 
+    avgCost: '',
+    purchaseDate: new Date().toISOString().split('T')[0] // Default to today
+  });
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   
@@ -77,21 +84,46 @@ export default function Portfolio() {
     const initialInvestment = holdings.reduce((sum, h) => sum + (h.avgCost * h.shares), 0);
     const currentValue = holdings.reduce((sum, h) => sum + h.value, 0);
     
-    // Generate data points (Feb to May - 4 months)
-    const dataPoints = 4;
+    // Find earliest purchase date
+    let earliestDate = new Date();
+    holdings.forEach(holding => {
+      if (holding.purchaseDate) {
+        const purchaseDate = new Date(holding.purchaseDate);
+        if (purchaseDate < earliestDate) {
+          earliestDate = purchaseDate;
+        }
+      }
+    });
+    
+    // Determine the timeframe based on purchase dates
+    const today = new Date();
+    const diffMonths = (today.getMonth() - earliestDate.getMonth()) + 
+                       (12 * (today.getFullYear() - earliestDate.getFullYear()));
+    
+    // Ensure we have at least 2 months of data
+    const monthsToShow = Math.max(2, Math.min(4, diffMonths + 1));
+    
+    // Generate data points based on timeframe
     const result = [];
     const startValue = initialInvestment * 0.95; // Start at 95% of initial investment
     
-    // Show data only from February to May
-    const months = ['Feb', 'Mar', 'Apr', 'May'];
+    // Generate month labels
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentMonth = today.getMonth();
     
-    for (let i = 0; i < dataPoints; i++) {
-      const progress = i / dataPoints;
+    const timelineMonths = [];
+    for (let i = monthsToShow - 1; i >= 0; i--) {
+      const monthIndex = (currentMonth - i + 12) % 12;
+      timelineMonths.push(months[monthIndex]);
+    }
+    
+    for (let i = 0; i < monthsToShow; i++) {
+      const progress = i / (monthsToShow - 1);
       const randomFactor = (Math.random() * 0.02) - 0.01; // Random -1% to +1%
       const value = startValue + (progress * (currentValue - startValue)) + (initialInvestment * randomFactor);
       
       result.push({
-        date: months[i],
+        date: timelineMonths[i],
         value: Math.round(value * 100) / 100
       });
     }
@@ -181,7 +213,8 @@ export default function Portfolio() {
         value,
         weight: 0,
         gain,
-        gainPercent
+        gainPercent,
+        purchaseDate: newPosition.purchaseDate
       };
       
       // Add to holdings
@@ -200,7 +233,13 @@ export default function Portfolio() {
       generatePortfolioPerformance(holdingsWithWeights);
       
       // Reset form and close modal
-      setNewPosition({ symbol: '', name: '', shares: '', avgCost: '' });
+      setNewPosition({ 
+        symbol: '', 
+        name: '', 
+        shares: '', 
+        avgCost: '',
+        purchaseDate: new Date().toISOString().split('T')[0]
+      });
       setShowAddPositionModal(false);
     } catch (err) {
       console.error('Error adding position:', err);
@@ -464,6 +503,17 @@ export default function Portfolio() {
                     value={newPosition.name}
                     onChange={(e) => setNewPosition({...newPosition, name: e.target.value})}
                     required
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Purchase Date</label>
+                  <input
+                    type="date"
+                    className="w-full p-3 border border-gray-700 rounded-lg bg-black text-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    value={newPosition.purchaseDate}
+                    onChange={(e) => setNewPosition({...newPosition, purchaseDate: e.target.value})}
+                    max={new Date().toISOString().split('T')[0]} // Can't select future dates
                   />
                 </div>
                 <div className="mb-4">
