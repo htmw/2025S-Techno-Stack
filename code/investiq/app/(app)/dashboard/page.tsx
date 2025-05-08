@@ -57,6 +57,7 @@ interface Holding {
   weight: number;
   gain: number;
   gainPercent: number;
+  purchaseDate?: string; // Added purchase date field
 }
 
 export default function Dashboard() {
@@ -74,8 +75,7 @@ export default function Dashboard() {
     news: true
   });
   
-  // Load deposits and portfolio from localStorage
-  const [totalDeposits, setTotalDeposits] = useState(0);
+  // Load portfolio from localStorage
   const [portfolioHoldings, setPortfolioHoldings] = useState<Holding[]>([]);
 
   // Time range options
@@ -84,12 +84,6 @@ export default function Dashboard() {
   // Load data from localStorage
   useEffect(() => {
     try {
-      // Load deposits
-      const deposits = localStorage.getItem('deposits') 
-        ? JSON.parse(localStorage.getItem('deposits') || '0') 
-        : 0;
-      setTotalDeposits(deposits);
-      
       // Load portfolio holdings
       const savedPortfolio = localStorage.getItem('portfolio');
       if (savedPortfolio) {
@@ -126,8 +120,20 @@ export default function Dashboard() {
     const initialInvestment = holdings.reduce((sum, h) => sum + (h.avgCost * h.shares), 0);
     const currentValue = holdings.reduce((sum, h) => sum + h.value, 0);
     
+    // Find earliest purchase date
+    let earliestDate = new Date();
+    holdings.forEach(holding => {
+      if (holding.purchaseDate) {
+        const purchaseDate = new Date(holding.purchaseDate);
+        if (purchaseDate < earliestDate) {
+          earliestDate = purchaseDate;
+        }
+      }
+    });
+    
     // Generate data points based on time range
     let dataPoints = 30; // Default to 1 month
+    let useMonthsOnly = false;
     
     switch (selectedTimeRange) {
       case '1D':
@@ -144,41 +150,44 @@ export default function Dashboard() {
         break;
       case '1Y':
         dataPoints = 12; // Monthly for 1 year
+        useMonthsOnly = true;
         break;
       case 'All':
         dataPoints = 24; // Monthly for 2 years
+        useMonthsOnly = true;
         break;
     }
     
     // Create a realistic performance curve based on current gain
     const result = [];
-    // Start value between 80-90% of initial investment
-    const startValue = initialInvestment * (0.8 + Math.random() * 0.1);
+    // Start value between 85-95% of initial investment
+    const startValue = initialInvestment * (0.85 + Math.random() * 0.1);
     
+    const today = new Date();
+    
+    // Generate data points
     for (let i = 0; i < dataPoints; i++) {
       // Add some randomness and a trend toward current value
       const progress = i / dataPoints;
-      const randomFactor = (Math.random() * 0.04) - 0.02; // Random -2% to +2%
+      const randomFactor = (Math.random() * 0.03) - 0.015; // Random -1.5% to +1.5%
       
       // Calculate value with more weight toward current value as i increases
       const value = startValue + (progress * (currentValue - startValue)) + (initialInvestment * randomFactor);
       
       // Format date label based on time range
       let dateLabel;
-      const today = new Date();
       
       if (selectedTimeRange === '1D') {
-        dateLabel = `${i}h`;
-      } else if (selectedTimeRange === '1W' || selectedTimeRange === '1M') {
-        const date = new Date();
-        date.setDate(today.getDate() - (dataPoints - i - 1));
-        dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      } else if (selectedTimeRange === '3M') {
+        // For 1D, show hour labels (e.g., "9AM", "2PM")
+        const hour = Math.floor(i * (24 / dataPoints));
+        dateLabel = `${hour % 12 === 0 ? 12 : hour % 12}${hour < 12 ? 'AM' : 'PM'}`;
+      } else if (selectedTimeRange === '1W' || selectedTimeRange === '1M' || selectedTimeRange === '3M') {
+        // For 1W, 1M, 3M show day labels
         const date = new Date();
         date.setDate(today.getDate() - (dataPoints - i - 1));
         dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       } else {
-        // For longer ranges, use month names
+        // For 1Y, All, show month labels
         const date = new Date();
         date.setMonth(today.getMonth() - (dataPoints - i - 1));
         dateLabel = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
@@ -195,19 +204,12 @@ export default function Dashboard() {
 
   // Generate default performance data if no portfolio exists
   const generateDefaultPerformance = () => {
+    // Show data only from February to May
     const performanceData = [
-      { date: 'Jan', value: 10000 },
-      { date: 'Feb', value: 10800 },
-      { date: 'Mar', value: 11500 },
-      { date: 'Apr', value: 12200 },
-      { date: 'May', value: 13000 },
-      { date: 'Jun', value: 12500 },
-      { date: 'Jul', value: 13200 },
-      { date: 'Aug', value: 13800 },
-      { date: 'Sep', value: 14500 },
-      { date: 'Oct', value: 15000 },
-      { date: 'Nov', value: 15600 },
-      { date: 'Dec', value: 15800 },
+      { date: 'Feb', value: 14500 },
+      { date: 'Mar', value: 15000 },
+      { date: 'Apr', value: 15600 },
+      { date: 'May', value: 15800 },
     ];
     
     setPortfolioPerformance(performanceData);
@@ -282,7 +284,7 @@ export default function Dashboard() {
       
       <div className="p-6 bg-gray-900">
         {/* Summary cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-black p-5 rounded-xl shadow-sm border border-green-500">
             <div className="flex items-center gap-2 mb-2">
               <div className="h-8 w-8 rounded-lg bg-gray-800 flex items-center justify-center">
@@ -343,17 +345,6 @@ export default function Dashboard() {
                 "Add positions in Portfolio"
               }
             </p>
-          </div>
-          
-          <div className="bg-black p-5 rounded-xl shadow-sm border border-green-500">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-8 w-8 rounded-lg bg-gray-800 flex items-center justify-center">
-                <DollarSign size={16} className="text-green-500" />
-              </div>
-              <span className="text-xs text-gray-400">Total Deposits</span>
-            </div>
-            <p className="text-xl font-bold text-white">${totalDeposits.toLocaleString()}</p>
-            <p className="text-sm text-green-500">Manage deposits</p>
           </div>
         </div>
         
